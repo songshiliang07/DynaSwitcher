@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="@dimen/widget_margin" >
+
+    <ImageButton
+        android:id="@+id/imagebutton1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/toggle_wifi"
+        android:src="@drawable/ic_home_wifi_on" />
+
+    <ImageButton
+        android:id="@+id/imagebutton2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/toggle_mobile"
+        android:src="@drawable/ic_home_apn_on" />
+
+    <ImageButton
+        android:id="@+id/imagebutton3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/toggle_bluetooth"
+        android:src="@drawable/ic_home_bluetooth_on" />
+
+    <ImageButton
+        android:id="@+id/imagebutton4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/toggle_gps"
+        android:src="@drawable/ic_home_gps_on" />
+
+    <ImageButton
+        android:id="@+id/imagebutton5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/toggle_airplane"
+        android:src="@drawable/ic_home_airplane_on" />
+
+    <ImageButton
+        android:id="@+id/imagebutton6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/toggle_more"
+        android:src="@drawable/ic_home_more" />
+
+</LinearLayout>

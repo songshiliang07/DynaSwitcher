@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">DynaSwitcher</string>
+    <string name="toggle_wifi">Wifi</string>
+    <string name="wifi_on">无线网络打开</string>
+    <string name="wifi_off">无线网络关闭</string>
+    <string name="toggle_mobile">Mobile data</string>
+    <string name="mobile_on">数据连接打开</string>
+    <string name="mobile_off">数据连接关闭</string>
+    <string name="toggle_bluetooth">Bluetooth</string>
+    <string name="bluetooth_on">蓝牙打开</string>
+    <string name="bluetooth_off">蓝牙关闭</string>
+    <string name="toggle_gps">GPS</string>
+    <string name="gps_on">GPS on</string>
+    <string name="gps_off">GPS off</string>
+    <string name="toggle_airplane">Airplane</string>
+    <string name="airplane_on">Airplane on</string>
+    <string name="airplane_off">Airplane off</string>
+    <string name="toggle_more">More#8230</string>
+
+</resources>
