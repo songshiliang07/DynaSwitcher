@@ -13,6 +13,10 @@
     <string name="bluetooth_off">Bluetooth off</string>
     <string name="toggle_gps">GPS</string>
     <string name="toggle_airplane">Airplane</string>
+    <string name="toggle_brightness">Brightness</string>
+    <string name="toggle_sync">Sync</string>
+    <string name="toggle_rotation">Rotation</string>
+    <string name="toggle_ringer">Sound</string>
     <string name="toggle_more">More#8230</string>
 
 </resources>
