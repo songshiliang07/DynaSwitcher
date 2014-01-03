@@ -1,21 +1,17 @@
 package com.dynamicname.dynaswitcher;
 
-import java.util.Observable;
-import java.util.Observer;
-
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
-import android.content.ContentQueryMap;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
+import android.database.ContentObserver;
 import android.location.LocationManager;
 import android.media.AudioManager;
 import android.net.wifi.WifiManager;
+import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -23,118 +19,179 @@ import android.widget.RemoteViews;
 public class DynaProvider extends AppWidgetProvider {
 	
 	static final String TAG = "DynaProvider";
-	static final String TOGGLE_WIFI = "TOGGLE_WIFI";
-	static final String TOGGLE_MOBILE = "TOGGLE_MOBILE";
-	static final String TOGGLE_BRIGHTNESS = "TOGGLE_BRIGHTNESS";
-	static final String TOGGLE_SYNC = "TOGGLE_SYNC";
-	static final String TOGGLE_ROTATION = "TOGGLE_ROTATION";
-	static final String TOGGLE_RINGER = "TOGGLE_RINGER";
 	
-	final class DynaObserver implements Observer {
-
-		final Context context;
-		final Class<?> cls;
-		
-		public DynaObserver(Context c, Class<?> cs) {
-			context = c;
-			cls = cs;
-		}
-		
-		@Override
-		public void update(Observable observable, Object obj) {
-			if (null != observable) {
-				AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-				RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-				Log.v(TAG, ((ContentQueryMap)observable).getRows().toString());
-				ContentValues value = ((ContentQueryMap)observable).getValues("mobile_data");
-				if (null != value) {
-					//Log.v(TAG, value.toString());
-					if (1 == value.getAsInteger("value"))
-						views.setImageViewResource(R.id.imagebutton2, R.drawable.ic_home_apn_on);
-					else
-						views.setImageViewResource(R.id.imagebutton2, R.drawable.ic_home_apn_off);
-				}
-				value = ((ContentQueryMap)observable).getValues(Settings.System.ACCELEROMETER_ROTATION);
-				if (null != value) {
-					//Log.v(TAG, value.toString());
-					if (1 == value.getAsInteger("value"))
-						views.setImageViewResource(R.id.imagebutton9, R.drawable.ic_home_rotate_on);
-					else
-						views.setImageViewResource(R.id.imagebutton9, R.drawable.ic_home_rotate_off);
-				}
-				int brightness = 0;
-				int brightness_mode = 0;
-				value = ((ContentQueryMap)observable).getValues(Settings.System.SCREEN_BRIGHTNESS);
-				if (null != value) {
-					//Log.v(TAG, value.toString());
-					brightness = value.getAsInteger("value");
-				}
-				value = ((ContentQueryMap)observable).getValues(Settings.System.SCREEN_BRIGHTNESS_MODE);
-				if (null != value) {
-					//Log.v(TAG, value.toString());
-					brightness_mode = value.getAsInteger("value");
-				}
-				switch(SwitchHelper.getBrightness(brightness_mode, brightness)) {
-				case SwitchHelper.LIGHT_AUTO:
-					views.setImageViewResource(R.id.imagebutton6, R.drawable.ic_home_brightness_auto);
-					break;
-				case SwitchHelper.LIGHT_25_PERCENT:
-					views.setImageViewResource(R.id.imagebutton6, R.drawable.ic_home_brightness_off);
-					break;
-				case SwitchHelper.LIGHT_50_PERCENT:
-					views.setImageViewResource(R.id.imagebutton6, R.drawable.ic_home_brightness_fairly);
-					break;
-				case SwitchHelper.LIGHT_100_PERCENT:
-					views.setImageViewResource(R.id.imagebutton6, R.drawable.ic_home_brightness_on);
-					break;
-				}
-				appWidgetManager.updateAppWidget(new ComponentName(context, cls), views);
-			}
-		}
-		
+	private static final String TOGGLE_WIFI       = "TOGGLE_WIFI";
+	private static final String TOGGLE_MOBILE     = "TOGGLE_MOBILE";
+	private static final String TOGGLE_BRIGHTNESS = "TOGGLE_BRIGHTNESS";
+	private static final String TOGGLE_SYNC       = "TOGGLE_SYNC";
+	private static final String TOGGLE_ROTATION   = "TOGGLE_ROTATION";
+	private static final String TOGGLE_RINGER     = "TOGGLE_RINGER";
+	
+	private static final int [] drawable_wifi = {
+		R.id.imagebutton1,
+		R.drawable.ic_home_wifi_on,
+		R.drawable.ic_home_wifi_off
+	};
+	private static final int [] drawable_mobiledata = {
+		R.id.imagebutton2,
+		R.drawable.ic_home_apn_on,
+		R.drawable.ic_home_apn_off
+	};
+	private static final int [] drawable_bluetooth = {
+		R.id.imagebutton3,
+		R.drawable.ic_home_bluetooth_on,
+		R.drawable.ic_home_bluetooth_off
+	};
+	private static final int [] drawable_gps = {
+		R.id.imagebutton4,
+		R.drawable.ic_home_gps_on,
+		R.drawable.ic_home_gps_off
+	};
+	private static final int [] drawable_airplane = {
+		R.id.imagebutton5,
+		R.drawable.ic_home_airplane_on,
+		R.drawable.ic_home_airplane_off
+	};
+	private static final int [] drawable_brightness = {
+		R.id.imagebutton6,
+		R.drawable.ic_home_brightness_auto,
+		R.drawable.ic_home_brightness_off,
+		R.drawable.ic_home_brightness_fairly,
+		R.drawable.ic_home_brightness_on
+	};
+	private static final int [] states_brightness = {
+		SwitchHelper.LIGHT_AUTO,
+		SwitchHelper.LIGHT_25_PERCENT,
+		SwitchHelper.LIGHT_50_PERCENT,
+		SwitchHelper.LIGHT_100_PERCENT
+	};
+	private static final int [] drawable_sync = {
+		R.id.imagebutton7,
+		R.drawable.ic_home_sync_on,
+		R.drawable.ic_home_sync_off
+	};
+	private static final int [] drawable_rotate = {
+		R.id.imagebutton8,
+		R.drawable.ic_home_rotate_on,
+		R.drawable.ic_home_rotate_off
+	};
+	private static final int [] drawable_ringer = {
+		R.id.imagebutton9,
+		R.drawable.ic_home_sound_ring_on,
+		R.drawable.ic_home_sound_silent,
+		R.drawable.ic_home_sound_vibrate_on
+	};
+	private static final int [] states_ringer = {
+		AudioManager.RINGER_MODE_NORMAL,
+		AudioManager.RINGER_MODE_SILENT,
+		AudioManager.RINGER_MODE_VIBRATE
 	};
 	
-	private static boolean inited = false;
-	private static ContentQueryMap global_query = null;
-	private static Observer global_observer = null;
-	private static ContentQueryMap system_query = null;
-	private static Observer system_observer = null;
+	private static void updateEnableOrDisable(RemoteViews views, boolean state, int [] drawable) {
+		if (state)
+			views.setImageViewResource(drawable[0], drawable[1]);
+		else
+			views.setImageViewResource(drawable[0], drawable[2]);
+	}
+	
+	private static void updateManyState(RemoteViews views, int cur_state, int [] states, int [] drawable) {
+		final int length = states.length;
+		int index = 0;
+		for(; index < length; ++index) {
+			if (cur_state == states[index]) break;
+		}
+		//Log.v(TAG, "cur_state = " +cur_state);
+		//Log.v(TAG, "states = " + Arrays.toString(states));
+		//Log.v(TAG, "index = " + index);
+		if (index >= 0 && index < (drawable.length - 1))
+			views.setImageViewResource(drawable[0], drawable[index + 1]);
+	}
+	
+	private static ContentObserver mobiledata_observer = null;
+	private static ContentObserver brightness_observer = null;
+	private static ContentObserver rotate_observer = null;
+	
+	synchronized private static void initObserver(
+			final Context context,
+			final AppWidgetManager wm,
+			final Class<?> cls) {
+		if (null == mobiledata_observer) {
+			mobiledata_observer = new ContentObserver(new Handler()) {
+				public void onChange(boolean selfChange) {
+					super.onChange(selfChange);
+					RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+					updateEnableOrDisable(
+							views,
+							SwitchHelper.checkMobileData(context),
+							drawable_mobiledata);
+					wm.updateAppWidget(new ComponentName(context, cls), views);
+				}
+			};
+			context.getContentResolver().registerContentObserver(
+					Settings.Global.getUriFor("mobile_data"), false, mobiledata_observer);
+		}
+		if (null == brightness_observer) {
+			brightness_observer = new ContentObserver(new Handler()) {
+				public void onChange(boolean selfChange) {
+					super.onChange(selfChange);
+					RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+					updateManyState(
+							views,
+							SwitchHelper.getBrightness(context),
+							states_brightness,
+							drawable_brightness);
+					wm.updateAppWidget(new ComponentName(context, cls), views);
+				}
+			};
+			context.getContentResolver().registerContentObserver(
+					Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS), false, brightness_observer);
+			context.getContentResolver().registerContentObserver(
+					Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE), false, brightness_observer);
+		}
+		if (null == rotate_observer) {
+			rotate_observer = new ContentObserver(new Handler()) {
+				public void onChange(boolean selfChange) {
+					super.onChange(selfChange);
+					RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+					updateEnableOrDisable(
+							views,
+							SwitchHelper.checkRotation(context),
+							drawable_rotate
+							);
+					wm.updateAppWidget(new ComponentName(context, cls), views);
+				}
+			};
+			context.getContentResolver().registerContentObserver(
+					Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION), false, rotate_observer);
+		}
+	}
+	
+	synchronized private static void finalObserver(Context context) {
+		if (null != mobiledata_observer) {
+			context.getContentResolver().unregisterContentObserver(mobiledata_observer);
+			mobiledata_observer = null;
+		}
+		if (null != brightness_observer) {
+			context.getContentResolver().unregisterContentObserver(brightness_observer);
+			brightness_observer = null;
+		}
+		if (null != rotate_observer) {
+			context.getContentResolver().unregisterContentObserver(rotate_observer);
+			rotate_observer = null;
+		}
+	}
 	
 	@Override
-	public void onUpdate(Context context,
-			AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-		super.onUpdate(context, appWidgetManager, appWidgetIds);
+	public void onDisabled(Context context) {
+		super.onDisabled(context);
+		finalObserver(context);
+	}
+	
+	@Override
+	public void onUpdate(Context context, AppWidgetManager wm, int[] appWidgetIds) {
+		super.onUpdate(context, wm, appWidgetIds);
 		
-		synchronized(this) {
-			if (!inited) {
-				inited = true;
-				Cursor cursor = context.getContentResolver().query(
-						Settings.Global.CONTENT_URI,
-						null,
-						"(" + Settings.Global.NAME + "=?)",
-						new String[] {
-								"mobile_data"
-						},
-						null);
-				global_query = new ContentQueryMap(cursor, Settings.Global.NAME, true, null);
-				global_observer = new DynaObserver(context, this.getClass());
-				global_query.addObserver(global_observer);
-				
-				cursor = context.getContentResolver().query(
-						Settings.System.CONTENT_URI,
-						null,
-						"(" + Settings.System.NAME + "=? or " + Settings.System.NAME + "=? or " + Settings.System.NAME + "=?)",
-						new String[] {
-								Settings.System.ACCELEROMETER_ROTATION,
-								Settings.System.SCREEN_BRIGHTNESS,
-								Settings.System.SCREEN_BRIGHTNESS_MODE
-						},
-						null);
-				system_query = new ContentQueryMap(cursor, Settings.System.NAME, true, null);
-				system_observer = global_observer;
-				system_query.addObserver(system_observer);
-			}
-		}
+		initObserver(context, wm, this.getClass());
 		
 		final int N = appWidgetIds.length;
 		for(int i = 0; i < N; ++i) {
@@ -146,109 +203,97 @@ public class DynaProvider extends AppWidgetProvider {
 			intent.setAction(TOGGLE_WIFI);
 			pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 			views.setOnClickPendingIntent(R.id.imagebutton1, pendingIntent);
-			if (SwitchHelper.checkWifi(context))
-				views.setImageViewResource(R.id.imagebutton1, R.drawable.ic_home_wifi_on);
-			else
-				views.setImageViewResource(R.id.imagebutton1, R.drawable.ic_home_wifi_off);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkWifi(context),
+					drawable_wifi);
 
-			//android.intent.action.ANY_DATA_STATE
 			intent = new Intent(context, this.getClass());
 			intent.setAction(TOGGLE_MOBILE);
 			pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 			views.setOnClickPendingIntent(R.id.imagebutton2, pendingIntent);
-			if (SwitchHelper.checkMobileData(context))
-				views.setImageViewResource(R.id.imagebutton2, R.drawable.ic_home_apn_on);
-			else
-				views.setImageViewResource(R.id.imagebutton2, R.drawable.ic_home_apn_off);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkMobileData(context),
+					drawable_mobiledata);
 			
 			intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
 			pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 			views.setOnClickPendingIntent(R.id.imagebutton3, pendingIntent);
-			if (SwitchHelper.checkBluetooth(context))
-				views.setImageViewResource(R.id.imagebutton3, R.drawable.ic_home_bluetooth_on);
-			else
-				views.setImageViewResource(R.id.imagebutton3, R.drawable.ic_home_bluetooth_off);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkBluetooth(context),
+					drawable_bluetooth);
 			
 			intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
 			pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 			views.setOnClickPendingIntent(R.id.imagebutton4, pendingIntent);
-			if (SwitchHelper.checkGPS(context))
-				views.setImageViewResource(R.id.imagebutton4, R.drawable.ic_home_gps_on);
-			else
-				views.setImageViewResource(R.id.imagebutton4, R.drawable.ic_home_gps_off);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkGPS(context),
+					drawable_gps);
 			
 			intent = new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS);
 			pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 			views.setOnClickPendingIntent(R.id.imagebutton5, pendingIntent);
-			if (SwitchHelper.checkAirplane(context))
-				views.setImageViewResource(R.id.imagebutton5, R.drawable.ic_home_airplane_on);
-			else
-				views.setImageViewResource(R.id.imagebutton5, R.drawable.ic_home_airplane_off);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkAirplane(context),
+					drawable_airplane);
 			
 			intent = new Intent(context, this.getClass());
 			intent.setAction(TOGGLE_BRIGHTNESS);
 			pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 			views.setOnClickPendingIntent(R.id.imagebutton6, pendingIntent);
-			switch(SwitchHelper.getBrightness(context)) {
-			case SwitchHelper.LIGHT_AUTO:
-				views.setImageViewResource(R.id.imagebutton6, R.drawable.ic_home_brightness_auto);
-				break;
-			case SwitchHelper.LIGHT_25_PERCENT:
-				views.setImageViewResource(R.id.imagebutton6, R.drawable.ic_home_brightness_off);
-				break;
-			case SwitchHelper.LIGHT_50_PERCENT:
-				views.setImageViewResource(R.id.imagebutton6, R.drawable.ic_home_brightness_fairly);
-				break;
-			case SwitchHelper.LIGHT_100_PERCENT:
-				views.setImageViewResource(R.id.imagebutton6, R.drawable.ic_home_brightness_on);
-				break;
-			}
-			
-			//intent = new Intent(context, MainActivity.class);
-			//pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-			//views.setOnClickPendingIntent(R.id.imagebutton7, pendingIntent);
+			updateManyState(
+					views,
+					SwitchHelper.getBrightness(context),
+					states_brightness,
+					drawable_brightness);
 			
 			intent = new Intent(context, this.getClass());
 			intent.setAction(TOGGLE_SYNC);
 			pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-			views.setOnClickPendingIntent(R.id.imagebutton8, pendingIntent);
-			if (SwitchHelper.checkSync(context))
-				views.setImageViewResource(R.id.imagebutton8, R.drawable.ic_home_sync_on);
-			else
-				views.setImageViewResource(R.id.imagebutton8, R.drawable.ic_home_sync_off);
+			views.setOnClickPendingIntent(R.id.imagebutton7, pendingIntent);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkSync(context),
+					drawable_sync);
 			
 			intent = new Intent(context, this.getClass());
 			intent.setAction(TOGGLE_ROTATION);
 			pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-			views.setOnClickPendingIntent(R.id.imagebutton9, pendingIntent);
-			if (SwitchHelper.checkRotation(context))
-				views.setImageViewResource(R.id.imagebutton9, R.drawable.ic_home_rotate_on);
-			else
-				views.setImageViewResource(R.id.imagebutton9, R.drawable.ic_home_rotate_off);
+			views.setOnClickPendingIntent(R.id.imagebutton8, pendingIntent);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkRotation(context),
+					drawable_rotate
+					);
 			
 			intent = new Intent(context, this.getClass());
 			intent.setAction(TOGGLE_RINGER);
 			pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
-			views.setOnClickPendingIntent(R.id.imagebutton10, pendingIntent);
-			switch(((AudioManager) context.getSystemService(Context.AUDIO_SERVICE)).getRingerMode()) {
-			case AudioManager.RINGER_MODE_NORMAL:
-				views.setImageViewResource(R.id.imagebutton10, R.drawable.ic_home_sound_ring_on);
-				break;
-			case AudioManager.RINGER_MODE_SILENT:
-				views.setImageViewResource(R.id.imagebutton10, R.drawable.ic_home_sound_silent);
-				break;
-			case AudioManager.RINGER_MODE_VIBRATE:
-				views.setImageViewResource(R.id.imagebutton10, R.drawable.ic_home_sound_vibrate_on);
-				break;
-			}
+			views.setOnClickPendingIntent(R.id.imagebutton9, pendingIntent);
+			updateManyState(
+					views,
+					((AudioManager) context.getSystemService(Context.AUDIO_SERVICE)).getRingerMode(),
+					states_ringer,
+					drawable_ringer);
 
-			appWidgetManager.updateAppWidget(appWidgetIds[i], views);
+			//intent = new Intent(context, MainActivity.class);
+			//pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+			//views.setOnClickPendingIntent(R.id.imagebutton7, pendingIntent);
+			
+			wm.updateAppWidget(appWidgetIds[i], views);
 		}
 	}
 	
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		super.onReceive(context, intent);
+		
+		AppWidgetManager wm = AppWidgetManager.getInstance(context);
+		initObserver(context, wm, this.getClass());
 		
 		final String action = intent.getAction();
 		Log.v(TAG, intent.toString());
@@ -268,111 +313,68 @@ public class DynaProvider extends AppWidgetProvider {
 			SwitchHelper.toggleRotation(context);
 		}
 		else if (TOGGLE_RINGER.equals(action)) {
-			AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-			switch(audioManager.getRingerMode()) {
-			case AudioManager.RINGER_MODE_NORMAL:
-				audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-				break;
-			case AudioManager.RINGER_MODE_SILENT:
-				audioManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
-				break;
-			case AudioManager.RINGER_MODE_VIBRATE:
-				audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
-				break;
-			}
+			SwitchHelper.toggleRinger(context);
 		}
 		else if (WifiManager.WIFI_STATE_CHANGED_ACTION/*"android.net.wifi.WIFI_STATE_CHANGE"*/.equals(action)) {
-			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
 			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 			int wifi_state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
-			int wifi_previous_state = intent.getIntExtra(WifiManager.EXTRA_PREVIOUS_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
-			Log.v(TAG, "WIFI_STATE " + wifi_previous_state + " -> " + wifi_state);
-			if (WifiManager.WIFI_STATE_ENABLED == wifi_state)
-				views.setImageViewResource(R.id.imagebutton1, R.drawable.ic_home_wifi_on);
-			else
-				views.setImageViewResource(R.id.imagebutton1, R.drawable.ic_home_wifi_off);
-			appWidgetManager.updateAppWidget(new ComponentName(context, this.getClass()), views);
+			//int wifi_previous_state = intent.getIntExtra(WifiManager.EXTRA_PREVIOUS_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);
+			//Log.v(TAG, "WIFI_STATE " + wifi_previous_state + " -> " + wifi_state);
+			updateEnableOrDisable(
+					views,
+					WifiManager.WIFI_STATE_ENABLED == wifi_state,
+					drawable_wifi);
+			wm.updateAppWidget(new ComponentName(context, this.getClass()), views);
 		}
-//		else if (ConnectivityManager.CONNECTIVITY_ACTION/*"android.net.conn.CONNECTIVITY_CHANGE"*/.equals(action)) {
-//			int networkType = intent.getIntExtra(ConnectivityManager.EXTRA_NETWORK_TYPE, ConnectivityManager.TYPE_DUMMY);
-//			Log.v(TAG, "EXTRA_NETWORK_TYPE = " + networkType);
-//			if (ConnectivityManager.TYPE_MOBILE == networkType
-//					|| ConnectivityManager.TYPE_MOBILE_DUN == networkType
-//					|| ConnectivityManager.TYPE_MOBILE_HIPRI == networkType
-//					|| ConnectivityManager.TYPE_MOBILE_MMS == networkType
-//					|| ConnectivityManager.TYPE_MOBILE_SUPL == networkType
-//					) {
-//				Log.v(TAG, "FAILOVER_CONNECTION = " + intent.getBooleanExtra("FAILOVER_CONNECTION", false));
-//				Log.v(TAG, "EXTRA_NO_CONNECTIVITY = " + intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false));
-//				NetworkInfo networkInfo = ((ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE)).getNetworkInfo(networkType);
-//				Log.v(TAG, networkInfo.toString());
-//				AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-//				RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-//				if (networkInfo.isConnected())
-//					views.setImageViewResource(R.id.imagebutton2, R.drawable.ic_home_apn_on);
-//				else
-//					views.setImageViewResource(R.id.imagebutton2, R.drawable.ic_home_apn_off);
-//				appWidgetManager.updateAppWidget(new ComponentName(context, this.getClass()), views);
-//			}
-//		}
 		else if (BluetoothAdapter.ACTION_STATE_CHANGED/*"android.bluetooth.adapter.action.STATE_CHANGED"*/.equals(action)) {
-			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
 			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-			Log.v(TAG, BluetoothAdapter.ACTION_STATE_CHANGED
-					+ " "
-					+ intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, BluetoothAdapter.STATE_OFF)
-					+ " -> "
-					+ intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF));
-			if (SwitchHelper.checkBluetooth(context))
-				views.setImageViewResource(R.id.imagebutton3, R.drawable.ic_home_bluetooth_on);
-			else
-				views.setImageViewResource(R.id.imagebutton3, R.drawable.ic_home_bluetooth_off);
-			appWidgetManager.updateAppWidget(new ComponentName(context, this.getClass()), views);
+			//Log.v(TAG, BluetoothAdapter.ACTION_STATE_CHANGED
+			//		+ " "
+			//		+ intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, BluetoothAdapter.STATE_OFF)
+			//		+ " -> "
+			//		+ intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF));
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkBluetooth(context),
+					drawable_bluetooth);
+			wm.updateAppWidget(new ComponentName(context, this.getClass()), views);
 		}
 		else if (LocationManager.PROVIDERS_CHANGED_ACTION/*"android.location.PROVIDERS_CHANGED"*/.equals(action)) {
-			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
 			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-			if (SwitchHelper.checkGPS(context))
-				views.setImageViewResource(R.id.imagebutton4, R.drawable.ic_home_gps_on);
-			else
-				views.setImageViewResource(R.id.imagebutton4, R.drawable.ic_home_gps_off);
-			appWidgetManager.updateAppWidget(new ComponentName(context, this.getClass()), views);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkGPS(context),
+					drawable_gps);
+			wm.updateAppWidget(new ComponentName(context, this.getClass()), views);
 		}
 		else if (Intent.ACTION_AIRPLANE_MODE_CHANGED/*"android.intent.action.AIRPLANE_MODE"*/.equals(action)) {
-			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
 			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 			boolean enabled = intent.getBooleanExtra("state", true);
-			Log.v(TAG, "state = " + enabled);
-			if (enabled)
-				views.setImageViewResource(R.id.imagebutton5, R.drawable.ic_home_airplane_on);
-			else
-				views.setImageViewResource(R.id.imagebutton5, R.drawable.ic_home_airplane_off);
-			appWidgetManager.updateAppWidget(new ComponentName(context, this.getClass()), views);
+			//Log.v(TAG, "state = " + enabled);
+			updateEnableOrDisable(
+					views,
+					enabled,
+					drawable_airplane);
+			wm.updateAppWidget(new ComponentName(context, this.getClass()), views);
 		}
 		else if ("com.android.sync.SYNC_CONN_STATUS_CHANGED".equals(action)) {
-			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
 			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-			if (SwitchHelper.checkSync(context))
-				views.setImageViewResource(R.id.imagebutton8, R.drawable.ic_home_sync_on);
-			else
-				views.setImageViewResource(R.id.imagebutton8, R.drawable.ic_home_sync_off);
-			appWidgetManager.updateAppWidget(new ComponentName(context, this.getClass()), views);
+			updateEnableOrDisable(
+					views,
+					SwitchHelper.checkSync(context),
+					drawable_sync);
+			wm.updateAppWidget(new ComponentName(context, this.getClass()), views);
 		}
-		else if ("android.media.RINGER_MODE_CHANGED".equals(action)) {
-			AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+		else if (AudioManager.RINGER_MODE_CHANGED_ACTION/*"android.media.RINGER_MODE_CHANGED"*/.equals(action)) {
 			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-			switch(((AudioManager) context.getSystemService(Context.AUDIO_SERVICE)).getRingerMode()) {
-			case AudioManager.RINGER_MODE_NORMAL:
-				views.setImageViewResource(R.id.imagebutton10, R.drawable.ic_home_sound_ring_on);
-				break;
-			case AudioManager.RINGER_MODE_SILENT:
-				views.setImageViewResource(R.id.imagebutton10, R.drawable.ic_home_sound_silent);
-				break;
-			case AudioManager.RINGER_MODE_VIBRATE:
-				views.setImageViewResource(R.id.imagebutton10, R.drawable.ic_home_sound_vibrate_on);
-				break;
-			}
-			appWidgetManager.updateAppWidget(new ComponentName(context, this.getClass()), views);
+			int mode = intent.getIntExtra(AudioManager.EXTRA_RINGER_MODE, AudioManager.RINGER_MODE_NORMAL);
+			//Log.v(TAG, "mode = " + mode);
+			updateManyState(
+					views,
+					mode,
+					states_ringer,
+					drawable_ringer);
+			wm.updateAppWidget(new ComponentName(context, this.getClass()), views);
 		}
 	}
 

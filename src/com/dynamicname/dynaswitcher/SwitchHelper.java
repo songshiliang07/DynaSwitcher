@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.provider.Settings;
@@ -24,124 +25,113 @@ public final class SwitchHelper {
 	public static final int LIGHT_100_PERCENT = 255;
 	
 	public static boolean checkWifi(Context context) {
-		WifiManager wm = (WifiManager) context
-				.getSystemService(Context.WIFI_SERVICE);
-		return wm.isWifiEnabled();
+		return ((WifiManager) context.getSystemService(Context.WIFI_SERVICE)).isWifiEnabled();
 	}
 
 	public static void toggleWiFi(Context context) {
-		WifiManager wm = (WifiManager) context
-				.getSystemService(Context.WIFI_SERVICE);
+		WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 		boolean enabled = wm.isWifiEnabled();
 		wm.setWifiEnabled(!enabled);
-		Toast.makeText(context, enabled ? R.string.wifi_off : R.string.wifi_on,
+		Toast.makeText(
+				context,
+				enabled ? R.string.wifi_off : R.string.wifi_on,
 				Toast.LENGTH_SHORT).show();
 	}
 
-	public static boolean checkMobileData(Context context) {
-		ConnectivityManager conMgr = (ConnectivityManager) context
-				.getSystemService(Context.CONNECTIVITY_SERVICE);
+	private static boolean inited = false;
+	private static Object iConMgr = null;                    // IConnectivityManager类的引用
+	private static Method getMobileDataEnabledMethod = null; // getMobileDataEnabled方法
+	private static Method setMobileDataEnabledMethod = null; // setMobileDataEnabled方法
+	
+	synchronized private static void initMobileDataMethod(Context context) {
+		if (!inited) {
+			inited = true;
 
-		Class<?> conMgrClass = null; // ConnectivityManager类
-		Field iConMgrField = null; // ConnectivityManager类中的字段
-		Object iConMgr = null; // IConnectivityManager类的引用
-		Class<?> iConMgrClass = null; // IConnectivityManager类
-		Method getMobileDataEnabledMethod = null; // getMobileDataEnabled方法
+			ConnectivityManager cm = (ConnectivityManager) context
+					.getSystemService(Context.CONNECTIVITY_SERVICE);
 
-		try {
-			// 取得ConnectivityManager类
-			conMgrClass = Class.forName(conMgr.getClass().getName());
-			// 取得ConnectivityManager类中的对象mService
-			iConMgrField = conMgrClass.getDeclaredField("mService");
-			// 设置mService可访问
-			iConMgrField.setAccessible(true);
-			// 取得mService的实例化类IConnectivityManager
-			iConMgr = iConMgrField.get(conMgr);
-			// 取得IConnectivityManager类
-			iConMgrClass = Class.forName(iConMgr.getClass().getName());
-			// 取得IConnectivityManager类中的getMobileDataEnabled()方法
-			getMobileDataEnabledMethod = iConMgrClass
-					.getDeclaredMethod("getMobileDataEnabled");
-			// 设置getMobileDataEnabled可访问
-			getMobileDataEnabledMethod.setAccessible(true);
-			// 调用getMobileDataEnabled方法
-			return (Boolean) getMobileDataEnabledMethod.invoke(iConMgr);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (NoSuchFieldException e) {
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
+			Class<?> conMgrClass = null;  // ConnectivityManager类
+			Field iConMgrField = null;    // ConnectivityManager类中的字段
+			Class<?> iConMgrClass = null; // IConnectivityManager类
+
+			try {
+				// 取得ConnectivityManager类
+				conMgrClass = Class.forName(cm.getClass().getName());
+				// 取得ConnectivityManager类中的对象mService
+				iConMgrField = conMgrClass.getDeclaredField("mService");
+				// 设置mService可访问
+				iConMgrField.setAccessible(true);
+				// 取得mService的实例化类IConnectivityManager
+				iConMgr = iConMgrField.get(cm);
+				// 取得IConnectivityManager类
+				iConMgrClass = Class.forName(iConMgr.getClass().getName());
+
+				// 取得IConnectivityManager类中的getMobileDataEnabled()方法
+				getMobileDataEnabledMethod = iConMgrClass
+						.getDeclaredMethod("getMobileDataEnabled");
+				// 设置getMobileDataEnabled可访问
+				getMobileDataEnabledMethod.setAccessible(true);
+				// 取得IConnectivityManager类中的setMobileDataEnabled(boolean)方法
+				setMobileDataEnabledMethod = iConMgrClass.getDeclaredMethod(
+						"setMobileDataEnabled", Boolean.TYPE);
+				// 设置setMobileDataEnabled方法可访问
+				setMobileDataEnabledMethod.setAccessible(true);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (NoSuchFieldException e) {
+				e.printStackTrace();
+			} catch (SecurityException e) {
+				e.printStackTrace();
+			} catch (NoSuchMethodException e) {
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			}
 		}
-
+	}
+	
+	public static boolean checkMobileData(Context context) {
+		initMobileDataMethod(context);
+		
+		if (null != getMobileDataEnabledMethod) {
+			try {
+				// 调用getMobileDataEnabled方法
+				return (Boolean) getMobileDataEnabledMethod.invoke(iConMgr);
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		}
+		
 		return false;
 	}
 
 	public static void toggleMobileData(Context context) {
-		ConnectivityManager conMgr = (ConnectivityManager) context
-				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		initMobileDataMethod(context);
 
-		Class<?> conMgrClass = null; // ConnectivityManager类
-		Field iConMgrField = null; // ConnectivityManager类中的字段
-		Object iConMgr = null; // IConnectivityManager类的引用
-		Class<?> iConMgrClass = null; // IConnectivityManager类
-		Method getMobileDataEnabledMethod = null; // getMobileDataEnabled方法
-		Method setMobileDataEnabledMethod = null; // setMobileDataEnabled方法
-
-		try {
-			// 取得ConnectivityManager类
-			conMgrClass = Class.forName(conMgr.getClass().getName());
-			// 取得ConnectivityManager类中的对象mService
-			iConMgrField = conMgrClass.getDeclaredField("mService");
-			// 设置mService可访问
-			iConMgrField.setAccessible(true);
-			// 取得mService的实例化类IConnectivityManager
-			iConMgr = iConMgrField.get(conMgr);
-			// 取得IConnectivityManager类
-			iConMgrClass = Class.forName(iConMgr.getClass().getName());
-
-			// 取得IConnectivityManager类中的getMobileDataEnabled()方法
-			getMobileDataEnabledMethod = iConMgrClass
-					.getDeclaredMethod("getMobileDataEnabled");
-			// 设置getMobileDataEnabled可访问
-			getMobileDataEnabledMethod.setAccessible(true);
-			// 取得IConnectivityManager类中的setMobileDataEnabled(boolean)方法
-			setMobileDataEnabledMethod = iConMgrClass.getDeclaredMethod(
-					"setMobileDataEnabled", Boolean.TYPE);
-			// 设置setMobileDataEnabled方法可访问
-			setMobileDataEnabledMethod.setAccessible(true);
-
-			// 调用getMobileDataEnabled方法
-			boolean enabled = (Boolean) getMobileDataEnabledMethod
-					.invoke(iConMgr);
-			// 调用setMobileDataEnabled方法
-			setMobileDataEnabledMethod.invoke(iConMgr, !enabled);
-			Toast.makeText(context,
-					enabled ? R.string.mobile_off : R.string.mobile_on,
-					Toast.LENGTH_SHORT).show();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (NoSuchFieldException e) {
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
+		if (null != getMobileDataEnabledMethod && null != setMobileDataEnabledMethod) {
+			try {
+				// 调用getMobileDataEnabled方法
+				boolean enabled = (Boolean) getMobileDataEnabledMethod.invoke(iConMgr);
+				// 调用setMobileDataEnabled方法
+				setMobileDataEnabledMethod.invoke(iConMgr, !enabled);
+				Toast.makeText(context,
+						enabled ? R.string.mobile_off : R.string.mobile_on,
+						Toast.LENGTH_SHORT).show();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			}
 		}
+
 	}
 
 	public static boolean checkBluetooth(Context context) {
@@ -155,7 +145,8 @@ public final class SwitchHelper {
 			adapter.disable();
 		else
 			adapter.enable();
-		Toast.makeText(context,
+		Toast.makeText(
+				context,
 				enabled ? R.string.bluetooth_off : R.string.bluetooth_on,
 				Toast.LENGTH_SHORT).show();
 	}
@@ -305,6 +296,7 @@ public final class SwitchHelper {
 		int status = 0;
 		try {
 			status = Settings.System.getInt(context.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION);
+			//Log.v(TAG, "rotation = " + status);
 		} catch (SettingNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -319,6 +311,21 @@ public final class SwitchHelper {
 			e.printStackTrace();
 		}
 		Settings.System.putInt(context.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 1 == status ? 0 : 1);
+	}
+	
+	public static void toggleRinger(Context context) {
+		AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+		switch(am.getRingerMode()) {
+		case AudioManager.RINGER_MODE_NORMAL:
+			am.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+			break;
+		case AudioManager.RINGER_MODE_SILENT:
+			am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
+			break;
+		case AudioManager.RINGER_MODE_VIBRATE:
+			am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+			break;
+		}
 	}
 	
 }
