@@ -313,6 +313,11 @@ public final class SwitchHelper {
 		Settings.System.putInt(context.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 1 == status ? 0 : 1);
 	}
 	
+	public static int getRinger(Context context) {
+		AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+		return am.getRingerMode();
+	}
+	
 	public static void toggleRinger(Context context) {
 		AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 		switch(am.getRingerMode()) {
