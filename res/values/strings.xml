@@ -17,5 +17,17 @@
     <string name="toggle_sync">Sync</string>
     <string name="toggle_rotation">Rotation</string>
     <string name="toggle_ringer">Sound</string>
+    
+    <string-array name="textview_array">
+        <item >Button1</item>
+        <item >Button2</item>
+        <item >Button3</item>
+        <item >Button4</item>
+        <item >Button5</item>
+        <item >Button6</item>
+        <item >Button7</item>
+        <item >Button8</item>
+        <item >Button9</item>
+    </string-array>
 
 </resources>

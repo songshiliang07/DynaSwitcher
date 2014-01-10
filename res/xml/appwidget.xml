@@ -3,6 +3,7 @@
      android:minHeight="36dip"
      android:minWidth="511dip"
      android:updatePeriodMillis="1000"
-     android:initialLayout="@layout/widget_layout">
+     android:initialLayout="@layout/widget_layout"
+     android:configure="com.dynamicname.dynaswitcher.ConfigActivity">
     
 </appwidget-provider>

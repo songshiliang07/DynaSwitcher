@@ -1,15 +1,12 @@
 package com.dynamicname.dynaswitcher;
 
-import java.util.Vector;
+import java.util.Arrays;
 
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.bluetooth.BluetoothAdapter;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.ContentObserver;
 import android.location.LocationManager;
 import android.media.AudioManager;
@@ -17,60 +14,64 @@ import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
+import android.util.SparseArray;
 import android.widget.RemoteViews;
 
 public class DynaProvider extends AppWidgetProvider {
-	
+
 	static final String TAG = "DynaProvider";
-	
+
 	private static final String TOGGLE_WIFI       = "TOGGLE_WIFI";
+	private static final int    KEY_WIFI          = 0;
 	private static final String TOGGLE_MOBILE     = "TOGGLE_MOBILE";
+	private static final int    KEY_MOBILE        = 1;
 	private static final String TOGGLE_BLUETOOTH  = "TOGGLE_BLUETOOTH";
+	private static final int    KEY_BLUETOOTH     = 2;
 	private static final String TOGGLE_GPS        = "TOGGLE_GPS";
+	private static final int    KEY_GPS           = 3;
 	private static final String TOGGLE_AIRPLANE   = "TOGGLE_AIRPLANE";
+	private static final int    KEY_AIRPLANE      = 4;
 	private static final String TOGGLE_BRIGHTNESS = "TOGGLE_BRIGHTNESS";
+	private static final int    KEY_BRIGHTNESS    = 5;
 	private static final String TOGGLE_SYNC       = "TOGGLE_SYNC";
+	private static final int    KEY_SYNC          = 6;
 	private static final String TOGGLE_ROTATION   = "TOGGLE_ROTATION";
+	private static final int    KEY_ROTATION      = 7;
 	private static final String TOGGLE_RINGER     = "TOGGLE_RINGER";
-	
-	private static final String PREFS_NAME = "com.dynamicname.dynaswitcher";
-	private static final String PREFS_1    = "_PREFS_1";
-	private static final String PREFS_2    = "_PREFS_2";
-	private static final String PREFS_3    = "_PREFS_3";
-	private static final String PREFS_4    = "_PREFS_4";
-	private static final String PREFS_5    = "_PREFS_5";
-	private static final String PREFS_6    = "_PREFS_6";
-	private static final String PREFS_7    = "_PREFS_7";
-	private static final String PREFS_8    = "_PREFS_8";
-	private static final String PREFS_9    = "_PREFS_9";
-	
+	private static final int    KEY_RINGER        = 8;
+	public static final int [] default_button_vector = {
+		KEY_WIFI,
+		KEY_MOBILE,
+		KEY_BLUETOOTH,
+		KEY_GPS,
+		KEY_AIRPLANE,
+		KEY_BRIGHTNESS,
+		KEY_SYNC,
+		KEY_ROTATION,
+		KEY_RINGER
+	};
+
 	private static final int [] drawable_wifi = {
-		R.id.imagebutton1,
 		R.drawable.ic_home_wifi_on,
 		R.drawable.ic_home_wifi_off
 	};
 	private static final int [] drawable_mobiledata = {
-		R.id.imagebutton2,
 		R.drawable.ic_home_apn_on,
 		R.drawable.ic_home_apn_off
 	};
 	private static final int [] drawable_bluetooth = {
-		R.id.imagebutton3,
 		R.drawable.ic_home_bluetooth_on,
 		R.drawable.ic_home_bluetooth_off
 	};
 	private static final int [] drawable_gps = {
-		R.id.imagebutton4,
 		R.drawable.ic_home_gps_on,
 		R.drawable.ic_home_gps_off
 	};
 	private static final int [] drawable_airplane = {
-		R.id.imagebutton5,
 		R.drawable.ic_home_airplane_on,
 		R.drawable.ic_home_airplane_off
 	};
 	private static final int [] drawable_brightness = {
-		R.id.imagebutton6,
 		R.drawable.ic_home_brightness_auto,
 		R.drawable.ic_home_brightness_off,
 		R.drawable.ic_home_brightness_fairly,
@@ -83,17 +84,14 @@ public class DynaProvider extends AppWidgetProvider {
 		SwitchHelper.LIGHT_100_PERCENT
 	};
 	private static final int [] drawable_sync = {
-		R.id.imagebutton7,
 		R.drawable.ic_home_sync_on,
 		R.drawable.ic_home_sync_off
 	};
 	private static final int [] drawable_rotation = {
-		R.id.imagebutton8,
 		R.drawable.ic_home_rotate_on,
 		R.drawable.ic_home_rotate_off
 	};
 	private static final int [] drawable_ringer = {
-		R.id.imagebutton9,
 		R.drawable.ic_home_sound_ring_on,
 		R.drawable.ic_home_sound_silent,
 		R.drawable.ic_home_sound_vibrate_on
@@ -103,91 +101,134 @@ public class DynaProvider extends AppWidgetProvider {
 		AudioManager.RINGER_MODE_SILENT,
 		AudioManager.RINGER_MODE_VIBRATE
 	};
-	
-	static void update(RemoteViews views, boolean state, final int [] drawable) {
-		if (state)
-			views.setImageViewResource(drawable[0], drawable[1]);
-		else
-			views.setImageViewResource(drawable[0], drawable[2]);
-	}
-	
-	static void update(RemoteViews views, int cur_state, final int [] states, final int [] drawable) {
-		final int length = states.length;
-		int index = 0;
-		for(; index < length; ++index) {
-			if (cur_state == states[index]) break;
-		}
-		//Log.v(TAG, "cur_state = " +cur_state);
-		//Log.v(TAG, "states = " + Arrays.toString(states));
-		//Log.v(TAG, "index = " + index);
-		if (index >= 0 && index < length)
-			views.setImageViewResource(drawable[0], drawable[index + 1]);
-	}
-	
+	public static final int [] resource_ids = {
+		R.id.imagebutton1,
+		R.id.imagebutton2,
+		R.id.imagebutton3,
+		R.id.imagebutton4,
+		R.id.imagebutton5,
+		R.id.imagebutton6,
+		R.id.imagebutton7,
+		R.id.imagebutton8,
+		R.id.imagebutton9
+	};
+
 	private static ContentObserver mobiledata_observer = null;
 	private static ContentObserver brightness_observer = null;
 	private static ContentObserver rotate_observer = null;
-	private static Vector<IntentHandler> v = null;
-	
-	synchronized private static void initObserver(
+	public  static SparseArray<IntentHandler> handler_map = null;
+
+	synchronized private static void init(
 			final Context context,
 			final AppWidgetManager awm,
-			final Class<?> cls,
-			BroadcastReceiver receiver) {
+			final Class<?> cls_provider) {
+		if (null == handler_map) {
+			handler_map = new SparseArray<IntentHandler>();
+			try {
+				Class<?> cls = Class.forName("com.dynamicname.dynaswitcher.SwitchHelper");
+				handler_map.put(
+						KEY_WIFI,
+						new IntentHandler(TOGGLE_WIFI,
+								WifiManager.WIFI_STATE_CHANGED_ACTION,
+								cls.getMethod("checkWifi", Context.class),
+								null,
+								drawable_wifi));
+				handler_map.put(
+						KEY_MOBILE,
+						new IntentHandler(
+								TOGGLE_MOBILE,
+								null,
+								cls.getMethod("checkMobileData", Context.class),
+								null,
+								drawable_mobiledata));
+				handler_map.put(
+						KEY_BLUETOOTH,
+						new IntentHandler(
+								TOGGLE_BLUETOOTH,
+								BluetoothAdapter.ACTION_STATE_CHANGED,
+								cls.getMethod("checkBluetooth", Context.class),
+								null,
+								drawable_bluetooth));
+				handler_map.put(
+						KEY_GPS,
+						new IntentHandler(
+								TOGGLE_GPS,
+								LocationManager.PROVIDERS_CHANGED_ACTION,
+								cls.getMethod("checkGPS", Context.class),
+								null,
+								drawable_gps));
+				handler_map.put(
+						KEY_AIRPLANE,
+						new IntentHandler(
+								TOGGLE_AIRPLANE,
+								Intent.ACTION_AIRPLANE_MODE_CHANGED,
+								cls.getMethod("checkAirplane", Context.class),
+								null,
+								drawable_airplane));
+				handler_map.put(
+						KEY_BRIGHTNESS,
+						new IntentHandler(
+								TOGGLE_BRIGHTNESS,
+								null,
+								cls.getMethod("getBrightness", Context.class),
+								states_brightness,
+								drawable_brightness));
+				handler_map.put(
+						KEY_SYNC,
+						new IntentHandler(
+								TOGGLE_SYNC,
+								"com.android.sync.SYNC_CONN_STATUS_CHANGED",
+								cls.getMethod("checkSync", Context.class),
+								null,
+								drawable_sync));
+				handler_map.put(
+						KEY_ROTATION,
+						new IntentHandler(
+								TOGGLE_ROTATION,
+								null,
+								cls.getMethod("checkRotation", Context.class),
+								null,
+								drawable_rotation));
+				handler_map.put(
+						KEY_RINGER,
+						new IntentHandler(
+								TOGGLE_RINGER,
+								AudioManager.RINGER_MODE_CHANGED_ACTION,
+								cls.getMethod("getRinger", Context.class),
+								states_ringer,
+								drawable_ringer));
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (NoSuchMethodException e) {
+				e.printStackTrace();
+			}
+		}
+
 		if (null == mobiledata_observer) {
-			mobiledata_observer = new ContentObserver(new Handler()) {
-				public void onChange(boolean selfChange) {
-					super.onChange(selfChange);
-					RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-					update(
-							views,
-							SwitchHelper.checkMobileData(context),
-							drawable_mobiledata);
-					awm.updateAppWidget(new ComponentName(context, cls), views);
-				}
-			};
+			mobiledata_observer = new DynaObserver(new Handler(), context, KEY_MOBILE);
 			context.getContentResolver().registerContentObserver(
 					Settings.Global.getUriFor("mobile_data"), false, mobiledata_observer);
 		}
 		if (null == brightness_observer) {
-			brightness_observer = new ContentObserver(new Handler()) {
-				public void onChange(boolean selfChange) {
-					super.onChange(selfChange);
-					RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-					update(
-							views,
-							SwitchHelper.getBrightness(context),
-							states_brightness,
-							drawable_brightness);
-					awm.updateAppWidget(new ComponentName(context, cls), views);
-				}
-			};
+			brightness_observer = new DynaObserver(new Handler(), context, KEY_BRIGHTNESS);
 			context.getContentResolver().registerContentObserver(
 					Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS), false, brightness_observer);
 			context.getContentResolver().registerContentObserver(
 					Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE), false, brightness_observer);
 		}
 		if (null == rotate_observer) {
-			rotate_observer = new ContentObserver(new Handler()) {
-				public void onChange(boolean selfChange) {
-					super.onChange(selfChange);
-					RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-					update(
-							views,
-							SwitchHelper.checkRotation(context),
-							drawable_rotation
-							);
-					awm.updateAppWidget(new ComponentName(context, cls), views);
-				}
-			};
+			rotate_observer = new DynaObserver(new Handler(), context, KEY_ROTATION);
 			context.getContentResolver().registerContentObserver(
 					Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION), false, rotate_observer);
 		}
 	}
-	
-	synchronized private static void finalObserver(Context context, BroadcastReceiver receiver) {
+
+	synchronized private static void destroy(Context context) {
+		if (null != handler_map) {
+			handler_map.clear();
+			handler_map = null;
+		}
 		if (null != mobiledata_observer) {
-			//context.unregisterReceiver(receiver);
 			context.getContentResolver().unregisterContentObserver(mobiledata_observer);
 			mobiledata_observer = null;
 		}
@@ -200,134 +241,47 @@ public class DynaProvider extends AppWidgetProvider {
 			rotate_observer = null;
 		}
 	}
-	
-	@Override
-	public void onDisabled(Context context) {
-		super.onDisabled(context);
-		finalObserver(context, this);
-	}
-	
+
 	@Override
 	public void onUpdate(Context context, AppWidgetManager awm, int[] appWidgetIds) {
+		Log.v(TAG, "onUpdate");
 		super.onUpdate(context, awm, appWidgetIds);
 		
-		initObserver(context, awm, this.getClass(), this);
-		
-		SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_1, 1)));
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_2, 2)));
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_3, 3)));
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_4, 4)));
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_5, 5)));
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_6, 6)));
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_7, 7)));
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_8, 8)));
-		Log.v(TAG, String.valueOf(settings.getInt(PREFS_9, 9)));
-		
-		v = new Vector<IntentHandler>();
-		try {
-			Class<?> cls = Class.forName("com.dynamicname.dynaswitcher.SwitchHelper");
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_WIFI,
-					WifiManager.WIFI_STATE_CHANGED_ACTION,
-					cls.getMethod("checkWifi", Context.class),
-					null,
-					drawable_wifi));
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_MOBILE,
-					null,
-					cls.getMethod("checkMobileData", Context.class),
-					null,
-					drawable_mobiledata));
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_BLUETOOTH,
-					BluetoothAdapter.ACTION_STATE_CHANGED,
-					cls.getMethod("checkBluetooth", Context.class),
-					null,
-					drawable_bluetooth));
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_GPS,
-					LocationManager.PROVIDERS_CHANGED_ACTION,
-					cls.getMethod("checkGPS", Context.class),
-					null,
-					drawable_gps));
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_AIRPLANE,
-					Intent.ACTION_AIRPLANE_MODE_CHANGED,
-					cls.getMethod("checkAirplane", Context.class),
-					null,
-					drawable_airplane));
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_BRIGHTNESS,
-					null,
-					cls.getMethod("getBrightness", Context.class),
-					states_brightness,
-					drawable_brightness));
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_SYNC,
-					"com.android.sync.SYNC_CONN_STATUS_CHANGED",
-					cls.getMethod("checkSync", Context.class),
-					null,
-					drawable_sync));
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_ROTATION,
-					null,
-					cls.getMethod("checkRotation", Context.class),
-					null,
-					drawable_rotation));
-			v.add(new IntentHandler(
-					context,
-					this.getClass(),
-					TOGGLE_RINGER,
-					AudioManager.RINGER_MODE_CHANGED_ACTION,
-					cls.getMethod("getRinger", Context.class),
-					states_ringer,
-					drawable_ringer));
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-		}
+		init(context, awm, this.getClass());
 		
 		final int N = appWidgetIds.length;
 		for(int i = 0; i < N; ++i) {
 			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 			
-			final int size = v.size();
-			for(int j = 0; j < size; ++j) {
-				v.get(j).onUpdate(views);
+			int[] button_vector = DynaPrefs.loadPrefs(context, appWidgetIds[i]);
+			if (null != button_vector) {
+				final int size = button_vector.length;
+				for(int j = 0; j < size; ++j) {
+					handler_map.get(button_vector[j]).onUpdate(context, this.getClass(), views, resource_ids[j]);
+				}
 			}
 			
 			awm.updateAppWidget(appWidgetIds[i], views);
 		}
 	}
-	
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		Log.v(TAG, "onReceive");
 		super.onReceive(context, intent);
 		
 		AppWidgetManager awm = AppWidgetManager.getInstance(context);
-		initObserver(context, awm, this.getClass(), this);
 		
 		final String action = intent.getAction();
 		Log.v(TAG, intent.toString());
-		if (TOGGLE_WIFI.equals(action)) {
+		if (AppWidgetManager.ACTION_APPWIDGET_UPDATE.equals(action)
+				|| AppWidgetManager.ACTION_APPWIDGET_ENABLED.equals(action)
+				|| AppWidgetManager.ACTION_APPWIDGET_DISABLED.equals(action)
+				|| AppWidgetManager.ACTION_APPWIDGET_DELETED.equals(action)
+				|| AppWidgetManager.ACTION_APPWIDGET_OPTIONS_CHANGED.equals(action)) {
+			return;
+		}
+		else if (TOGGLE_WIFI.equals(action)) {
 			SwitchHelper.toggleWiFi(context);
 		}
 		else if (TOGGLE_MOBILE.equals(action)) {
@@ -360,11 +314,75 @@ public class DynaProvider extends AppWidgetProvider {
 		else if (TOGGLE_RINGER.equals(action)) {
 			SwitchHelper.toggleRinger(context);
 		}
+		else if (null != handler_map) {
+			SparseArray<int[]> widget_settings = DynaPrefs.loadPrefs(context);
+			final int length = widget_settings.size();
+			for(int i = 0; i < length; ++i) {
+				int[] button_vector = widget_settings.valueAt(i);
+				final int size = button_vector.length;
+				for(int j = 0; j < size; ++j) {
+					handler_map.get(button_vector[j]).onReceive(context, awm, widget_settings.keyAt(i), resource_ids[j], action);
+				}
+			}
+		}
+	}
 
-		if (null != v) {
-			final int size = v.size();
+	@Override
+	public void onDeleted(Context context, int[] appWidgetIds) {
+		Log.v(TAG, "onDeleted");
+		super.onDeleted(context, appWidgetIds);
+		final int size = appWidgetIds.length;
+		for(int i = 0; i < size; ++i) {
+			DynaPrefs.deletePrefs(context, appWidgetIds[i]);
+		}
+	}
+
+	@Override
+	public void onEnabled(Context context) {
+		Log.v(TAG, "onEnabled");
+		super.onEnabled(context);
+	}
+
+	@Override
+	public void onDisabled(Context context) {
+		Log.v(TAG, "onDisabled");
+		super.onDisabled(context);
+		destroy(context);
+	}
+
+	static public void updateAll(Context context, int [] vec) {
+		if (null != handler_map) {
+			AppWidgetManager awm = AppWidgetManager.getInstance(context);
+			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+			SparseArray<int[]> widget_settings = DynaPrefs.loadPrefs(context);
+			final int length = widget_settings.size();
+			for(int i = 0; i < length; ++i) {
+				Log.v(TAG, "before " + Arrays.toString(widget_settings.valueAt(i)));
+				widget_settings.setValueAt(i, vec);
+				Log.v(TAG, "after  " + Arrays.toString(widget_settings.valueAt(i)));
+				int[] button_vector = widget_settings.valueAt(i);
+				final int size = button_vector.length;
+				for(int j = 0; j < size; ++j) {
+					handler_map.get(button_vector[j]).onUpdate(context, DynaProvider.class, views, resource_ids[j]);
+					awm.updateAppWidget(widget_settings.keyAt(i), views);
+				}
+			}
+		}
+	}
+
+	static public void update(Context context, int mAppWidgetId, int [] vec) {
+		if (AppWidgetManager.INVALID_APPWIDGET_ID != mAppWidgetId
+				&& null != vec) {
+			AppWidgetManager awm = AppWidgetManager.getInstance(context);
+			RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+			Log.v(TAG, "before " + Arrays.toString(DynaPrefs.loadPrefs(context, mAppWidgetId)));
+			DynaPrefs.savePrefs(context, mAppWidgetId, vec);
+			Log.v(TAG, "after  " + Arrays.toString(DynaPrefs.loadPrefs(context, mAppWidgetId)));
+			int[] button_vector = DynaPrefs.loadPrefs(context, mAppWidgetId);
+			final int size = button_vector.length;
 			for(int j = 0; j < size; ++j) {
-				v.get(j).onReceive(awm, action);
+				handler_map.get(button_vector[j]).onUpdate(context, DynaProvider.class, views, resource_ids[j]);
+				awm.updateAppWidget(mAppWidgetId, views);
 			}
 		}
 	}

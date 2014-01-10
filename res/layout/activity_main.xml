@@ -1,20 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
 
     <Button
-        android:layout_width="wrap_content"
+        android:id="@+id/button1"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/toggle_wifi"
-        android:onClick="toggleWifi" />
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:text="@android:string/ok" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/button2"
+        android:layout_below="@+id/button1"
+        android:layout_centerHorizontal="true" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+	        <Spinner
+	            android:id="@+id/spinner1"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+	        <Spinner
+	            android:id="@+id/spinner2"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+	        <Spinner
+	            android:id="@+id/spinner3"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+	        <Spinner
+	            android:id="@+id/spinner4"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+	        <Spinner
+	            android:id="@+id/spinner5"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+	        <Spinner
+	            android:id="@+id/spinner6"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+	        <Spinner
+	            android:id="@+id/spinner7"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+	        <Spinner
+	            android:id="@+id/spinner8"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+	        <Spinner
+	            android:id="@+id/spinner9"
+	            android:layout_width="match_parent"
+	            android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+    </ScrollView>
 
     <Button
-        android:layout_width="wrap_content"
+        android:id="@+id/button2"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/toggle_mobile"
-        android:onClick="toggleMobileData" />
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:text="@android:string/ok" />
 
-</LinearLayout>
+</RelativeLayout>
