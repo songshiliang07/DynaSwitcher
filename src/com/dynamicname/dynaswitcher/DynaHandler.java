@@ -9,7 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.widget.RemoteViews;
 
-public class IntentHandler {
+public class DynaHandler {
 
 	private final String my_action;
 	private final String android_action;
@@ -17,7 +17,7 @@ public class IntentHandler {
 	private final int [] states;
 	private final int [] drawables;
 
-	public IntentHandler(
+	public DynaHandler(
 			final String action,
 			final String sys_action,
 			final Method method,

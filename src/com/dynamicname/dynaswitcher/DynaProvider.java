@@ -116,7 +116,7 @@ public class DynaProvider extends AppWidgetProvider {
 	private static ContentObserver mobiledata_observer = null;
 	private static ContentObserver brightness_observer = null;
 	private static ContentObserver rotate_observer = null;
-	public  static SparseArray<IntentHandler> handler_map = null;
+	public  static SparseArray<DynaHandler> handler_map = null;
 
 	@Override
 	public void onUpdate(Context context, AppWidgetManager awm, int[] appWidgetIds) {
@@ -235,19 +235,19 @@ public class DynaProvider extends AppWidgetProvider {
 			final AppWidgetManager awm,
 			final Class<?> cls_provider) {
 		if (null == handler_map) {
-			handler_map = new SparseArray<IntentHandler>();
+			handler_map = new SparseArray<DynaHandler>();
 			try {
 				Class<?> cls = Class.forName("com.dynamicname.dynaswitcher.SwitchHelper");
 				handler_map.put(
 						KEY_WIFI,
-						new IntentHandler(TOGGLE_WIFI,
+						new DynaHandler(TOGGLE_WIFI,
 								WifiManager.WIFI_STATE_CHANGED_ACTION,
 								cls.getMethod("checkWifi", Context.class),
 								null,
 								drawable_wifi));
 				handler_map.put(
 						KEY_MOBILE,
-						new IntentHandler(
+						new DynaHandler(
 								TOGGLE_MOBILE,
 								null,
 								cls.getMethod("checkMobileData", Context.class),
@@ -255,7 +255,7 @@ public class DynaProvider extends AppWidgetProvider {
 								drawable_mobiledata));
 				handler_map.put(
 						KEY_BLUETOOTH,
-						new IntentHandler(
+						new DynaHandler(
 								TOGGLE_BLUETOOTH,
 								BluetoothAdapter.ACTION_STATE_CHANGED,
 								cls.getMethod("checkBluetooth", Context.class),
@@ -263,7 +263,7 @@ public class DynaProvider extends AppWidgetProvider {
 								drawable_bluetooth));
 				handler_map.put(
 						KEY_GPS,
-						new IntentHandler(
+						new DynaHandler(
 								TOGGLE_GPS,
 								LocationManager.PROVIDERS_CHANGED_ACTION,
 								cls.getMethod("checkGPS", Context.class),
@@ -271,7 +271,7 @@ public class DynaProvider extends AppWidgetProvider {
 								drawable_gps));
 				handler_map.put(
 						KEY_AIRPLANE,
-						new IntentHandler(
+						new DynaHandler(
 								TOGGLE_AIRPLANE,
 								Intent.ACTION_AIRPLANE_MODE_CHANGED,
 								cls.getMethod("checkAirplane", Context.class),
@@ -279,7 +279,7 @@ public class DynaProvider extends AppWidgetProvider {
 								drawable_airplane));
 				handler_map.put(
 						KEY_BRIGHTNESS,
-						new IntentHandler(
+						new DynaHandler(
 								TOGGLE_BRIGHTNESS,
 								null,
 								cls.getMethod("getBrightness", Context.class),
@@ -287,7 +287,7 @@ public class DynaProvider extends AppWidgetProvider {
 								drawable_brightness));
 				handler_map.put(
 						KEY_SYNC,
-						new IntentHandler(
+						new DynaHandler(
 								TOGGLE_SYNC,
 								"com.android.sync.SYNC_CONN_STATUS_CHANGED",
 								cls.getMethod("checkSync", Context.class),
@@ -295,7 +295,7 @@ public class DynaProvider extends AppWidgetProvider {
 								drawable_sync));
 				handler_map.put(
 						KEY_ROTATION,
-						new IntentHandler(
+						new DynaHandler(
 								TOGGLE_ROTATION,
 								null,
 								cls.getMethod("checkRotation", Context.class),
@@ -303,7 +303,7 @@ public class DynaProvider extends AppWidgetProvider {
 								drawable_rotation));
 				handler_map.put(
 						KEY_RINGER,
-						new IntentHandler(
+						new DynaHandler(
 								TOGGLE_RINGER,
 								AudioManager.RINGER_MODE_CHANGED_ACTION,
 								cls.getMethod("getRinger", Context.class),
