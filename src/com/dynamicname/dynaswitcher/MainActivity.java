@@ -51,7 +51,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 			vec[i] = spinner.getSelectedItemPosition();
         }
         Log.v("", "onClick " + Arrays.toString(vec));
-        DynaProvider.updateAll(this, vec);
+        DynaHandlerMap.update(this, vec);
 
 		finish();
 	}

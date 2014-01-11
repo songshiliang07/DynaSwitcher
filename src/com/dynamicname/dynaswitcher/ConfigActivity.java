@@ -53,7 +53,7 @@ public class ConfigActivity extends Activity implements View.OnClickListener {
 			vec[i] = spinner.getSelectedItemPosition();
         }
         Log.v("", "onClick " + Arrays.toString(vec));
-        DynaProvider.update(this, mAppWidgetId, vec);
+        DynaHandlerMap.update(this, mAppWidgetId, vec);
 		
         // Make sure we pass back the original appWidgetId
 		Intent resultValue = new Intent();

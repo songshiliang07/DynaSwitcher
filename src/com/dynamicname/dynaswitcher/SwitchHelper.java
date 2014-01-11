@@ -47,8 +47,7 @@ public final class SwitchHelper {
 		if (!inited) {
 			inited = true;
 
-			ConnectivityManager cm = (ConnectivityManager) context
-					.getSystemService(Context.CONNECTIVITY_SERVICE);
+			ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
 			Class<?> conMgrClass = null;  // ConnectivityManager类
 			Field iConMgrField = null;    // ConnectivityManager类中的字段
@@ -56,7 +55,7 @@ public final class SwitchHelper {
 
 			try {
 				// 取得ConnectivityManager类
-				conMgrClass = Class.forName(cm.getClass().getName());
+				conMgrClass = cm.getClass();
 				// 取得ConnectivityManager类中的对象mService
 				iConMgrField = conMgrClass.getDeclaredField("mService");
 				// 设置mService可访问
@@ -64,20 +63,16 @@ public final class SwitchHelper {
 				// 取得mService的实例化类IConnectivityManager
 				iConMgr = iConMgrField.get(cm);
 				// 取得IConnectivityManager类
-				iConMgrClass = Class.forName(iConMgr.getClass().getName());
+				iConMgrClass = iConMgr.getClass();
 
 				// 取得IConnectivityManager类中的getMobileDataEnabled()方法
-				getMobileDataEnabledMethod = iConMgrClass
-						.getDeclaredMethod("getMobileDataEnabled");
+				getMobileDataEnabledMethod = iConMgrClass.getDeclaredMethod("getMobileDataEnabled");
 				// 设置getMobileDataEnabled可访问
 				getMobileDataEnabledMethod.setAccessible(true);
 				// 取得IConnectivityManager类中的setMobileDataEnabled(boolean)方法
-				setMobileDataEnabledMethod = iConMgrClass.getDeclaredMethod(
-						"setMobileDataEnabled", Boolean.TYPE);
+				setMobileDataEnabledMethod = iConMgrClass.getDeclaredMethod("setMobileDataEnabled", Boolean.TYPE);
 				// 设置setMobileDataEnabled方法可访问
 				setMobileDataEnabledMethod.setAccessible(true);
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
 			} catch (NoSuchFieldException e) {
 				e.printStackTrace();
 			} catch (SecurityException e) {
@@ -243,42 +238,34 @@ public final class SwitchHelper {
 		}
 		
 //		try {
-//			PowerManager mPowerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
-//            // 得到PowerManager类对应的Class对象
-//            Class<?> pmClass = Class.forName(mPowerManager.getClass().getName());
-//            // 得到PowerManager类中的成员mService（mService为PowerManager类型）
-//            Field field = pmClass.getDeclaredField("mService");
-//            // 设置mService可访问
-//            field.setAccessible(true);
-//            // 实例化mService
-//            Object iPM = field.get(mPowerManager);
-//            // 得到PowerManager对应的Class对象
-//            Class<?> iPMClass = Class.forName(iPM.getClass().getName());
-//            // 得到PowerManager的函数setBacklightBrightness对应的Method对象，
-//            Method method = iPMClass.getDeclaredMethod("setBacklightBrightness", int.class);
-//            // 设置setBacklightBrightness方法可访问
-//            method.setAccessible(true);
-//            //调用实现PowerManager的setBacklightBrightness
-//            method.invoke(iPM, light);
-//        }
-//        catch (ClassNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//        catch (NoSuchFieldException e) {
-//            e.printStackTrace();
-//        }
-//        catch (IllegalArgumentException e) {
-//            e.printStackTrace();
-//        }
-//        catch (IllegalAccessException e) {
-//            e.printStackTrace();
-//        }
-//        catch (NoSuchMethodException e) {
-//            e.printStackTrace();
-//        }
-//        catch (InvocationTargetException e) {
-//            e.printStackTrace();
-//        }
+//			PowerManager mPowerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+//			// 得到PowerManager类对应的Class对象
+//			Class<?> pmClass = mPowerManager.getClass();
+//			// 得到PowerManager类中的成员mService（mService为PowerManager类型）
+//			Field field = pmClass.getDeclaredField("mService");
+//			// 设置mService可访问
+//			field.setAccessible(true);
+//			// 实例化mService
+//			Object iPM = field.get(mPowerManager);
+//			// 得到PowerManager对应的Class对象
+//			Class<?> iPMClass = iPM.getClass();
+//			// 得到PowerManager的函数setBacklightBrightness对应的Method对象，
+//			Method method = iPMClass.getDeclaredMethod("setBacklightBrightness", int.class);
+//			// 设置setBacklightBrightness方法可访问
+//			method.setAccessible(true);
+//			// 调用实现PowerManager的setBacklightBrightness
+//			method.invoke(iPM, light);
+//		} catch (NoSuchFieldException e) {
+//			e.printStackTrace();
+//		} catch (IllegalArgumentException e) {
+//			e.printStackTrace();
+//		} catch (IllegalAccessException e) {
+//			e.printStackTrace();
+//		} catch (NoSuchMethodException e) {
+//			e.printStackTrace();
+//		} catch (InvocationTargetException e) {
+//			e.printStackTrace();
+//		}
 		Settings.System.putInt(context.getContentResolver(),
 				Settings.System.SCREEN_BRIGHTNESS,
 				light);
