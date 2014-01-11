@@ -1,7 +1,6 @@
 package com.dynamicname.dynaswitcher;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -24,26 +23,12 @@ public class DynaPrefs {
 				loadPrefs(context);
 			if (null != widget_settings)
 				widget_settings.put(mAppWidgetId, vec);
-			Set<String> set = new HashSet<String>();
-			final int length = vec.length;
-			for(int i = 0; i < length; ++i) {
-				set.add(String.valueOf(vec[i]));
-			}
+			Log.v(TAG, "savePrefs orig: " + mAppWidgetId + " " + Arrays.toString(vec));
 			SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 			SharedPreferences.Editor editor = settings.edit();
-			editor.putStringSet(String.valueOf(mAppWidgetId), set);
+			editor.putString(String.valueOf(mAppWidgetId), Arrays.toString(vec));
 			editor.apply();
 		}
-	}
-
-	synchronized static public int[] loadPrefs(Context context, int mAppWidgetId) {
-		loadPrefs(context);
-		int[] button_vector = widget_settings.get(mAppWidgetId);
-		if (null == button_vector) {
-			button_vector = DynaProvider.default_button_vector;
-			widget_settings.put(mAppWidgetId, button_vector);
-		}
-		return button_vector;
 	}
 
 	synchronized static public void deletePrefs(Context context, int mAppWidgetId) {
@@ -58,10 +43,31 @@ public class DynaPrefs {
 		Log.v(TAG, String.valueOf(
 				mAppWidgetId)
 				+ "  prefs   "
-				+ settings.getStringSet(String.valueOf(mAppWidgetId), null));
+				+ settings.getString(String.valueOf(mAppWidgetId), null));
 		SharedPreferences.Editor editor = settings.edit();
 		editor.remove(String.valueOf(mAppWidgetId));
 		editor.apply();
+	}
+
+	synchronized static public void clearPrefs(Context context) {
+		if (null != widget_settings)
+			widget_settings = null;
+		SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+		SharedPreferences.Editor editor = settings.edit();
+		editor.clear();
+		editor.apply();
+	}
+
+	synchronized static public int[] loadPrefs(Context context, int mAppWidgetId) {
+		if (null == widget_settings)
+			loadPrefs(context);
+		int[] button_vector = widget_settings.get(mAppWidgetId);
+		if (null == button_vector) {
+			button_vector = DynaProvider.default_button_vector;
+			savePrefs(context, mAppWidgetId, button_vector);
+		}
+		Log.v(TAG, "loadPrefs one : " + mAppWidgetId + " " + Arrays.toString(button_vector));
+		return button_vector;
 	}
 
 	synchronized static public SparseArray<int[]> loadPrefs(Context context) {
@@ -70,22 +76,25 @@ public class DynaPrefs {
 			SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 			Set<String> keys = settings.getAll().keySet();
 			Iterator<String> keys_iter = keys.iterator();
-			while(keys_iter.hasNext()) {
-				int mAppWidgetId = Integer.parseInt(keys_iter.next());
-				if (AppWidgetManager.INVALID_APPWIDGET_ID != mAppWidgetId) {
-					Set<String> set = settings.getStringSet(String.valueOf(mAppWidgetId), null);
-					if (null != set) {
-						int[] button_vector = new int[set.size()];
-						Iterator<String> iter = set.iterator();
-						int i = 0;
-						while(iter.hasNext()) {
-							button_vector[i] = Integer.parseInt(iter.next());
-							++i;
+			try {
+				while(keys_iter.hasNext()) {
+					int mAppWidgetId = Integer.valueOf(keys_iter.next());
+					if (AppWidgetManager.INVALID_APPWIDGET_ID != mAppWidgetId) {
+						String set = settings.getString(String.valueOf(mAppWidgetId), null);
+						if (null != set) {
+							String[] intValues = set.substring(1, set.length() - 1).split(", ");
+							final int length = intValues.length;
+							int[] button_vector = new int[length];
+							for(int i = 0; i < length; ++i) {
+								button_vector[i] = Integer.valueOf(intValues[i]);
+							}
+							widget_settings.put(mAppWidgetId, button_vector);
+							Log.v(TAG, "loadPrefs all : " + mAppWidgetId + " " + Arrays.toString(button_vector));
 						}
-						widget_settings.put(mAppWidgetId, button_vector);
-						Log.v(TAG, "loadPrefs all: " + mAppWidgetId + " " + Arrays.toString(button_vector));
 					}
 				}
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
 			}
 		}
 		return widget_settings;
