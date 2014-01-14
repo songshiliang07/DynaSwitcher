@@ -13,7 +13,6 @@ import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
-import android.widget.Toast;
 
 public final class SwitchHelper {
 	
@@ -32,10 +31,10 @@ public final class SwitchHelper {
 		WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 		boolean enabled = wm.isWifiEnabled();
 		wm.setWifiEnabled(!enabled);
-		Toast.makeText(
-				context,
-				enabled ? R.string.wifi_off : R.string.wifi_on,
-				Toast.LENGTH_SHORT).show();
+		//Toast.makeText(
+		//		context,
+		//		enabled ? R.string.wifi_off : R.string.wifi_on,
+		//		Toast.LENGTH_SHORT).show();
 	}
 
 	private static boolean inited = false;
@@ -115,9 +114,9 @@ public final class SwitchHelper {
 				boolean enabled = (Boolean) getMobileDataEnabledMethod.invoke(iConMgr);
 				// 调用setMobileDataEnabled方法
 				setMobileDataEnabledMethod.invoke(iConMgr, !enabled);
-				Toast.makeText(context,
-						enabled ? R.string.mobile_off : R.string.mobile_on,
-						Toast.LENGTH_SHORT).show();
+				//Toast.makeText(context,
+				//		enabled ? R.string.mobile_off : R.string.mobile_on,
+				//		Toast.LENGTH_SHORT).show();
 			} catch (IllegalAccessException e) {
 				e.printStackTrace();
 			} catch (IllegalArgumentException e) {
@@ -140,10 +139,10 @@ public final class SwitchHelper {
 			adapter.disable();
 		else
 			adapter.enable();
-		Toast.makeText(
-				context,
-				enabled ? R.string.bluetooth_off : R.string.bluetooth_on,
-				Toast.LENGTH_SHORT).show();
+		//Toast.makeText(
+		//		context,
+		//		enabled ? R.string.bluetooth_off : R.string.bluetooth_on,
+		//		Toast.LENGTH_SHORT).show();
 	}
 
 	public static boolean checkGPS(Context context) {

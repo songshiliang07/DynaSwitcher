@@ -11,23 +11,23 @@ public class DynaProvider extends AppWidgetProvider {
 
 	static final String TAG = "DynaProvider";
 
-	public static final String TOGGLE_WIFI       = "TOGGLE_WIFI";
+	public static final String ACTION_WIFI       = "TOGGLE_WIFI";
 	public static final int    KEY_WIFI          = 0;
-	public static final String TOGGLE_MOBILE     = "TOGGLE_MOBILE";
+	public static final String ACTION_MOBILE     = "TOGGLE_MOBILE";
 	public static final int    KEY_MOBILE        = 1;
-	public static final String TOGGLE_BLUETOOTH  = "TOGGLE_BLUETOOTH";
+	public static final String ACTION_BLUETOOTH  = "TOGGLE_BLUETOOTH";
 	public static final int    KEY_BLUETOOTH     = 2;
-	public static final String TOGGLE_GPS        = "TOGGLE_GPS";
+	public static final String ACTION_GPS        = "TOGGLE_GPS";
 	public static final int    KEY_GPS           = 3;
-	public static final String TOGGLE_AIRPLANE   = "TOGGLE_AIRPLANE";
+	public static final String ACTION_AIRPLANE   = "TOGGLE_AIRPLANE";
 	public static final int    KEY_AIRPLANE      = 4;
-	public static final String TOGGLE_BRIGHTNESS = "TOGGLE_BRIGHTNESS";
+	public static final String ACTION_BRIGHTNESS = "TOGGLE_BRIGHTNESS";
 	public static final int    KEY_BRIGHTNESS    = 5;
-	public static final String TOGGLE_SYNC       = "TOGGLE_SYNC";
+	public static final String ACTION_SYNC       = "TOGGLE_SYNC";
 	public static final int    KEY_SYNC          = 6;
-	public static final String TOGGLE_ROTATION   = "TOGGLE_ROTATION";
+	public static final String ACTION_ROTATION   = "TOGGLE_ROTATION";
 	public static final int    KEY_ROTATION      = 7;
-	public static final String TOGGLE_RINGER     = "TOGGLE_RINGER";
+	public static final String ACTION_RINGER     = "TOGGLE_RINGER";
 	public static final int    KEY_RINGER        = 8;
 	public static final int [] default_button_vector = {
 		KEY_WIFI,
@@ -46,7 +46,7 @@ public class DynaProvider extends AppWidgetProvider {
 		Log.v(TAG, "onUpdate");
 		super.onUpdate(context, awm, appWidgetIds);
 
-		DynaHandlerMap.init(context, awm);
+		DynaHandlerMap.init(context);
 
 		final int N = appWidgetIds.length;
 		for(int i = 0; i < N; ++i) {
@@ -62,7 +62,7 @@ public class DynaProvider extends AppWidgetProvider {
 		AppWidgetManager awm = AppWidgetManager.getInstance(context);
 
 		final String action = intent.getAction();
-		Log.v(TAG, intent.toString());
+		//Log.v(TAG, intent.toString());
 		if (AppWidgetManager.ACTION_APPWIDGET_UPDATE.equals(action)
 				|| AppWidgetManager.ACTION_APPWIDGET_ENABLED.equals(action)
 				|| AppWidgetManager.ACTION_APPWIDGET_DISABLED.equals(action)
@@ -70,41 +70,41 @@ public class DynaProvider extends AppWidgetProvider {
 				|| AppWidgetManager.ACTION_APPWIDGET_OPTIONS_CHANGED.equals(action)) {
 			return;
 		}
-		else if (TOGGLE_WIFI.equals(action)) {
+		else if (ACTION_WIFI.equals(action)) {
 			SwitchHelper.toggleWiFi(context);
 		}
-		else if (TOGGLE_MOBILE.equals(action)) {
+		else if (ACTION_MOBILE.equals(action)) {
 			SwitchHelper.toggleMobileData(context);
 		}
-		else if (TOGGLE_BLUETOOTH.equals(action)) {
+		else if (ACTION_BLUETOOTH.equals(action)) {
 			intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(intent);
 		}
-		else if (TOGGLE_GPS.equals(action)) {
+		else if (ACTION_GPS.equals(action)) {
 			intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(intent);
 		}
-		else if (TOGGLE_AIRPLANE.equals(action)) {
+		else if (ACTION_AIRPLANE.equals(action)) {
 			intent = new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS);
 			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(intent);
 		}
-		else if (TOGGLE_BRIGHTNESS.equals(action)) {
+		else if (ACTION_BRIGHTNESS.equals(action)) {
 			SwitchHelper.toggleBrightness(context);
 		}
-		else if (TOGGLE_SYNC.equals(action)) {
+		else if (ACTION_SYNC.equals(action)) {
 			SwitchHelper.toggleSync(context);
 		}
-		else if (TOGGLE_ROTATION.equals(action)) {
+		else if (ACTION_ROTATION.equals(action)) {
 			SwitchHelper.toggleRotation(context);
 		}
-		else if (TOGGLE_RINGER.equals(action)) {
+		else if (ACTION_RINGER.equals(action)) {
 			SwitchHelper.toggleRinger(context);
 		}
 		else {
-			DynaHandlerMap.init(context, awm);
+			DynaHandlerMap.init(context);
 			DynaHandlerMap.receive(context, awm, action);
 		}
 	}

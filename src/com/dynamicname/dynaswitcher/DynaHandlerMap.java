@@ -1,18 +1,16 @@
 package com.dynamicname.dynaswitcher;
 
-import java.util.Arrays;
-
 import android.appwidget.AppWidgetManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.location.LocationManager;
 import android.media.AudioManager;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.provider.Settings;
-import android.util.Log;
 import android.util.SparseArray;
 import android.widget.RemoteViews;
 
@@ -71,30 +69,48 @@ public final class DynaHandlerMap {
 		AudioManager.RINGER_MODE_VIBRATE
 	};
 	public static final int [] resource_ids = {
-		R.id.imagebutton1,
-		R.id.imagebutton2,
-		R.id.imagebutton3,
-		R.id.imagebutton4,
-		R.id.imagebutton5,
-		R.id.imagebutton6,
-		R.id.imagebutton7,
-		R.id.imagebutton8,
-		R.id.imagebutton9
+		R.id.imageview1,
+		R.id.imageview2,
+		R.id.imageview3,
+		R.id.imageview4,
+		R.id.imageview5,
+		R.id.imageview6,
+		R.id.imageview7,
+		R.id.imageview8,
+		R.id.imageview9
 	};
 
 	private static ContentObserver mobiledata_observer = null;
 	private static ContentObserver brightness_observer = null;
 	private static ContentObserver rotate_observer = null;
 	private static SparseArray<DynaHandler> handler_map = null;
-
-	synchronized public static void init(Context context, AppWidgetManager awm) {
+	
+	synchronized public static int getCount() {
+		if (null == handler_map)
+			return 0;
+		else
+			return handler_map.size();
+	}
+	
+	synchronized public static DynaHandler getHandler(int position) {
+		if (null == handler_map)
+			return null;
+		else
+			return handler_map.valueAt(position);
+	}
+	
+	synchronized public static void init(Context context) {
 		if (null == handler_map) {
 			handler_map = new SparseArray<DynaHandler>();
 			try {
 				Class<?> cls = Class.forName("com.dynamicname.dynaswitcher.SwitchHelper");
+				Resources res = context.getResources();
 				handler_map.put(
 						DynaProvider.KEY_WIFI,
-						new DynaHandler(DynaProvider.TOGGLE_WIFI,
+						new DynaHandler(
+								DynaProvider.KEY_WIFI,
+								res.getString(R.string.toggle_wifi),
+								DynaProvider.ACTION_WIFI,
 								WifiManager.WIFI_STATE_CHANGED_ACTION,
 								cls.getMethod("checkWifi", Context.class),
 								null,
@@ -102,7 +118,9 @@ public final class DynaHandlerMap {
 				handler_map.put(
 						DynaProvider.KEY_MOBILE,
 						new DynaHandler(
-								DynaProvider.TOGGLE_MOBILE,
+								DynaProvider.KEY_MOBILE,
+								res.getString(R.string.toggle_mobiledata),
+								DynaProvider.ACTION_MOBILE,
 								null,
 								cls.getMethod("checkMobileData", Context.class),
 								null,
@@ -110,7 +128,9 @@ public final class DynaHandlerMap {
 				handler_map.put(
 						DynaProvider.KEY_BLUETOOTH,
 						new DynaHandler(
-								DynaProvider.TOGGLE_BLUETOOTH,
+								DynaProvider.KEY_BLUETOOTH,
+								res.getString(R.string.toggle_bluetooth),
+								DynaProvider.ACTION_BLUETOOTH,
 								BluetoothAdapter.ACTION_STATE_CHANGED,
 								cls.getMethod("checkBluetooth", Context.class),
 								null,
@@ -118,7 +138,9 @@ public final class DynaHandlerMap {
 				handler_map.put(
 						DynaProvider.KEY_GPS,
 						new DynaHandler(
-								DynaProvider.TOGGLE_GPS,
+								DynaProvider.KEY_GPS,
+								res.getString(R.string.toggle_gps),
+								DynaProvider.ACTION_GPS,
 								LocationManager.PROVIDERS_CHANGED_ACTION,
 								cls.getMethod("checkGPS", Context.class),
 								null,
@@ -126,7 +148,9 @@ public final class DynaHandlerMap {
 				handler_map.put(
 						DynaProvider.KEY_AIRPLANE,
 						new DynaHandler(
-								DynaProvider.TOGGLE_AIRPLANE,
+								DynaProvider.KEY_AIRPLANE,
+								res.getString(R.string.toggle_airplane),
+								DynaProvider.ACTION_AIRPLANE,
 								Intent.ACTION_AIRPLANE_MODE_CHANGED,
 								cls.getMethod("checkAirplane", Context.class),
 								null,
@@ -134,7 +158,9 @@ public final class DynaHandlerMap {
 				handler_map.put(
 						DynaProvider.KEY_BRIGHTNESS,
 						new DynaHandler(
-								DynaProvider.TOGGLE_BRIGHTNESS,
+								DynaProvider.KEY_BRIGHTNESS,
+								res.getString(R.string.toggle_brightness),
+								DynaProvider.ACTION_BRIGHTNESS,
 								null,
 								cls.getMethod("getBrightness", Context.class),
 								states_brightness,
@@ -142,7 +168,9 @@ public final class DynaHandlerMap {
 				handler_map.put(
 						DynaProvider.KEY_SYNC,
 						new DynaHandler(
-								DynaProvider.TOGGLE_SYNC,
+								DynaProvider.KEY_SYNC,
+								res.getString(R.string.toggle_sync),
+								DynaProvider.ACTION_SYNC,
 								"com.android.sync.SYNC_CONN_STATUS_CHANGED",
 								cls.getMethod("checkSync", Context.class),
 								null,
@@ -150,7 +178,9 @@ public final class DynaHandlerMap {
 				handler_map.put(
 						DynaProvider.KEY_ROTATION,
 						new DynaHandler(
-								DynaProvider.TOGGLE_ROTATION,
+								DynaProvider.KEY_ROTATION,
+								res.getString(R.string.toggle_rotation),
+								DynaProvider.ACTION_ROTATION,
 								null,
 								cls.getMethod("checkRotation", Context.class),
 								null,
@@ -158,7 +188,9 @@ public final class DynaHandlerMap {
 				handler_map.put(
 						DynaProvider.KEY_RINGER,
 						new DynaHandler(
-								DynaProvider.TOGGLE_RINGER,
+								DynaProvider.KEY_RINGER,
+								res.getString(R.string.toggle_ringer),
+								DynaProvider.ACTION_RINGER,
 								AudioManager.RINGER_MODE_CHANGED_ACTION,
 								cls.getMethod("getRinger", Context.class),
 								states_ringer,
@@ -227,9 +259,9 @@ public final class DynaHandlerMap {
 		if (AppWidgetManager.INVALID_APPWIDGET_ID != mAppWidgetId
 				&& null != vec) {
 			AppWidgetManager awm = AppWidgetManager.getInstance(context);
-			Log.v(TAG, "before " + Arrays.toString(DynaPrefs.loadPrefs(context, mAppWidgetId)));
+			//Log.v(TAG, "before : " + mAppWidgetId + " " + Arrays.toString(DynaPrefs.loadPrefs(context, mAppWidgetId)));
 			DynaPrefs.savePrefs(context, mAppWidgetId, vec);
-			Log.v(TAG, "after  " + Arrays.toString(DynaPrefs.loadPrefs(context, mAppWidgetId)));
+			//Log.v(TAG, "after  : " + mAppWidgetId + " " + Arrays.toString(DynaPrefs.loadPrefs(context, mAppWidgetId)));
 			DynaHandlerMap.update(context, awm, mAppWidgetId);
 		}
 	}
@@ -241,9 +273,9 @@ public final class DynaHandlerMap {
 			SparseArray<int[]> widget_settings = DynaPrefs.loadPrefs(context);
 			final int length = widget_settings.size();
 			for(int i = 0; i < length; ++i) {
-				Log.v(TAG, "before " + Arrays.toString(widget_settings.valueAt(i)));
+				//Log.v(TAG, "before : " + widget_settings.keyAt(i) + " " + Arrays.toString(widget_settings.valueAt(i)));
 				widget_settings.setValueAt(i, vec);
-				Log.v(TAG, "after  " + Arrays.toString(widget_settings.valueAt(i)));
+				//Log.v(TAG, "after  : " + widget_settings.keyAt(i) + " " + Arrays.toString(widget_settings.valueAt(i)));
 				int[] button_vector = widget_settings.valueAt(i);
 				final int size = button_vector.length;
 				for(int j = 0; j < size; ++j) {
@@ -269,15 +301,14 @@ public final class DynaHandlerMap {
 	synchronized public static void receive(Context context, int type) {
 		if (null != handler_map) {
 			SparseArray<int[]> widget_settings = DynaPrefs.loadPrefs(context);
-			final int length = widget_settings.size();
-			for(int i = 0; i < length; ++i) {
+			final int size = widget_settings.size();
+			for(int i = 0; i < size; ++i) {
 				int[] button_vector = widget_settings.valueAt(i);
-				final int size = button_vector.length;
-				for(int j = 0; j < size; ++j) {
+				final int length = button_vector.length;
+				for(int j = 0; j < length; ++j) {
 					if (type == button_vector[j]) {
 						AppWidgetManager awm = AppWidgetManager.getInstance(context);
 						handler_map.get(button_vector[j]).onReceive(context, awm, widget_settings.keyAt(i), resource_ids[j]);
-						break;
 					}
 				}
 			}

@@ -11,31 +11,42 @@ import android.widget.RemoteViews;
 
 public class DynaHandler {
 
-	private final String my_action;
+	public  final int    key;
+	public  final String name;
+	private final String local_action;
 	private final String android_action;
 	private final Method method;
 	private final int [] states;
-	private final int [] drawables;
+	public  final int [] drawables;
+
+	@Override
+	public String toString() {
+		return name;
+	}
 
 	public DynaHandler(
-			final String action,
-			final String sys_action,
+			final int    key,
+			final String name,
+			final String local_action,
+			final String android_action,
 			final Method method,
 			final int [] states,
 			final int [] drawables) {
-		this.my_action = action;
-		this.android_action = sys_action;
+		this.key = key;
+		this.name = name;
+		this.local_action = local_action;
+		this.android_action = android_action;
 		this.method = method;
 		this.states = states;
 		this.drawables = drawables;
 	}
 
 	public void onUpdate(Context context, Class<?> cls, RemoteViews views, int rid) {
-		if (null == my_action)
+		if (null == local_action)
 			return;
 		
 		Intent intent = new Intent(context, cls);
-		intent.setAction(my_action);
+		intent.setAction(local_action);
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
 		views.setOnClickPendingIntent(rid, pendingIntent);
 		if (null != method) {

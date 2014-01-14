@@ -7,7 +7,6 @@ import java.util.Set;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
 import android.util.SparseArray;
 
 public class DynaPrefs {
@@ -23,7 +22,7 @@ public class DynaPrefs {
 				loadPrefs(context);
 			if (null != widget_settings)
 				widget_settings.put(mAppWidgetId, vec);
-			Log.v(TAG, "savePrefs orig: " + mAppWidgetId + " " + Arrays.toString(vec));
+			//Log.v(TAG, "savePrefs orig: " + mAppWidgetId + " " + Arrays.toString(vec));
 			SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 			SharedPreferences.Editor editor = settings.edit();
 			editor.putString(String.valueOf(mAppWidgetId), Arrays.toString(vec));
@@ -33,17 +32,17 @@ public class DynaPrefs {
 
 	synchronized static public void deletePrefs(Context context, int mAppWidgetId) {
 		if (null != widget_settings) {
-			Log.v(TAG, String.valueOf(
-					mAppWidgetId)
-					+ "  memory  "
-					+ Arrays.toString(widget_settings.get(mAppWidgetId)));
+			//Log.v(TAG, String.valueOf(
+			//		mAppWidgetId)
+			//		+ "  memory  "
+			//		+ Arrays.toString(widget_settings.get(mAppWidgetId)));
 			widget_settings.remove(mAppWidgetId);
 		}
 		SharedPreferences settings = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-		Log.v(TAG, String.valueOf(
-				mAppWidgetId)
-				+ "  prefs   "
-				+ settings.getString(String.valueOf(mAppWidgetId), null));
+		//Log.v(TAG, String.valueOf(
+		//		mAppWidgetId)
+		//		+ "  prefs   "
+		//		+ settings.getString(String.valueOf(mAppWidgetId), null));
 		SharedPreferences.Editor editor = settings.edit();
 		editor.remove(String.valueOf(mAppWidgetId));
 		editor.apply();
@@ -66,7 +65,7 @@ public class DynaPrefs {
 			button_vector = DynaProvider.default_button_vector;
 			savePrefs(context, mAppWidgetId, button_vector);
 		}
-		Log.v(TAG, "loadPrefs one : " + mAppWidgetId + " " + Arrays.toString(button_vector));
+		//Log.v(TAG, "loadPrefs one : " + mAppWidgetId + " " + Arrays.toString(button_vector));
 		return button_vector;
 	}
 
@@ -89,7 +88,7 @@ public class DynaPrefs {
 								button_vector[i] = Integer.valueOf(intValues[i]);
 							}
 							widget_settings.put(mAppWidgetId, button_vector);
-							Log.v(TAG, "loadPrefs all : " + mAppWidgetId + " " + Arrays.toString(button_vector));
+							//Log.v(TAG, "loadPrefs all : " + mAppWidgetId + " " + Arrays.toString(button_vector));
 						}
 					}
 				}
